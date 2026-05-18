@@ -232,34 +232,39 @@ const AddKnowledgeModal = ({
             >
               <input
                 type="file"
-                id="csv-file-input"
-                accept=".csv,text/csv"
+                id="knowledge-file-input"
+                accept=".csv,.pdf,text/csv,application/pdf"
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) {
-                    // Validate file size (10MB max)
-                    if (file.size > 10 * 1024 * 1024) {
-                      setError("File size must be less than 10MB");
-                      return;
-                    }
-                    // Validate file type
-                    if (
-                      !file.name.endsWith(".csv") &&
-                      file.type !== "text/csv"
-                    ) {
-                      setError("Only CSV files are allowed");
-                      return;
-                    }
-                    setUploadedFile(file);
-                    setError(null);
+                  if (!file) return;
+
+                  // 15MB cap
+                  if (file.size > 15 * 1024 * 1024) {
+                    setError("File size must be less than 15MB");
+                    return;
                   }
+
+                  const lowerName = file.name.toLowerCase();
+                  const isCsv =
+                    lowerName.endsWith(".csv") || file.type === "text/csv";
+                  const isPdf =
+                    lowerName.endsWith(".pdf") ||
+                    file.type === "application/pdf";
+
+                  if (!isCsv && !isPdf) {
+                    setError("Only CSV and PDF files are allowed");
+                    return;
+                  }
+
+                  setUploadedFile(file);
+                  setError(null);
                 }}
               />
               <div
                 className="border-2 border-dashed border-white/10 rounded-xl h-60 flex flex-col items-center justify-center text-center p-6 hover:bg-white/2 transition-colors cursor-pointer"
                 onClick={() => {
-                  document.getElementById("csv-file-input")?.click();
+                  document.getElementById("knowledge-file-input")?.click();
                 }}
               >
                 <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mb-4">
@@ -270,7 +275,9 @@ const AddKnowledgeModal = ({
                     ? uploadedFile.name
                     : "Click to upload or drag and drop"}
                 </p>
-                <p className="text-xs text-zinc-500 mt-1">CSV (max 10MB)</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  CSV or PDF (max 15MB)
+                </p>
               </div>
             </TabsContent>
           </div>

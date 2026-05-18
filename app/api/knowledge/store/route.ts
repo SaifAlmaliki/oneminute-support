@@ -2,7 +2,17 @@ import { db } from "@/db/client";
 import { knowledge_source } from "@/db/schema";
 import { isAuthorized } from "@/lib/isAuthorized";
 import { summarizeMarkdown } from "@/lib/openAI";
+import { extractPdfText } from "@/lib/pdf/extractPdf";
+import {
+  PdfCorruptError,
+  PdfEncryptedError,
+  PdfImageOnlyError,
+  PdfTooLargeError,
+} from "@/lib/pdf/errors";
 import { NextRequest, NextResponse } from "next/server";
+
+export const maxDuration = 300;
+export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,32 +39,110 @@ export async function POST(req: NextRequest) {
           );
         }
 
-        const fileContent = await file.text();
+        const fileName = file.name;
+        const lowerName = fileName.toLowerCase();
+        const isPdf =
+          lowerName.endsWith(".pdf") || file.type === "application/pdf";
+        const isCsv =
+          lowerName.endsWith(".csv") || file.type === "text/csv";
 
-        const lines = fileContent.split("\n").filter((line) => line.trim());
-        const headers = lines[0]?.split(",").map((h) => h.trim());
-        let formattedContent: any = "";
+        if (isPdf) {
+          const buffer = Buffer.from(await file.arrayBuffer());
 
-        const markdown = await summarizeMarkdown(fileContent);
-        formattedContent = markdown;
+          let extracted: { text: string; pageCount: number };
+          try {
+            extracted = await extractPdfText(buffer);
+          } catch (err) {
+            if (err instanceof PdfEncryptedError) {
+              return NextResponse.json(
+                {
+                  error:
+                    "This PDF is password-protected. Please upload an unlocked version.",
+                },
+                { status: 400 }
+              );
+            }
+            if (err instanceof PdfTooLargeError) {
+              return NextResponse.json(
+                {
+                  error: `PDF has ${err.pageCount} pages. Maximum supported is 30 pages — please split the file.`,
+                },
+                { status: 400 }
+              );
+            }
+            if (err instanceof PdfImageOnlyError) {
+              return NextResponse.json(
+                {
+                  error:
+                    "This PDF appears to be scanned or image-based. We can't extract text from it yet — please upload a text-based PDF.",
+                },
+                { status: 400 }
+              );
+            }
+            if (err instanceof PdfCorruptError) {
+              return NextResponse.json(
+                { error: "Could not read this PDF. The file may be corrupted." },
+                { status: 400 }
+              );
+            }
+            throw err;
+          }
 
-        await db.insert(knowledge_source).values({
-          user_email: user.email,
-          type: "upload",
-          name: file.name,
-          status: "active",
-          content: formattedContent,
-          meta_data: JSON.stringify({
-            fileName: file.name,
-            fileSize: file.size,
-            rowCount: lines.length - 1,
-            headers: headers,
-          }),
-        });
+          const content =
+            extracted.text.length > 8000
+              ? await summarizeMarkdown(extracted.text)
+              : extracted.text;
+
+          await db.insert(knowledge_source).values({
+            user_email: user.email,
+            type: "upload",
+            name: fileName,
+            status: "active",
+            content,
+            meta_data: JSON.stringify({
+              fileName,
+              fileSize: file.size,
+              pageCount: extracted.pageCount,
+              fileType: "pdf",
+            }),
+          });
+
+          return NextResponse.json(
+            { message: "PDF uploaded successfully" },
+            { status: 200 }
+          );
+        }
+
+        if (isCsv) {
+          const fileContent = await file.text();
+          const lines = fileContent.split("\n").filter((line) => line.trim());
+          const headers = lines[0]?.split(",").map((h) => h.trim());
+          const markdown = await summarizeMarkdown(fileContent);
+
+          await db.insert(knowledge_source).values({
+            user_email: user.email,
+            type: "upload",
+            name: fileName,
+            status: "active",
+            content: markdown,
+            meta_data: JSON.stringify({
+              fileName,
+              fileSize: file.size,
+              rowCount: lines.length - 1,
+              headers,
+              fileType: "csv",
+            }),
+          });
+
+          return NextResponse.json(
+            { message: "CSV file uploaded successfully" },
+            { status: 200 }
+          );
+        }
 
         return NextResponse.json(
-          { message: "CSV file uploaded successfully" },
-          { status: 200 }
+          { error: "Only CSV and PDF files are allowed" },
+          { status: 400 }
         );
       }
     } else {

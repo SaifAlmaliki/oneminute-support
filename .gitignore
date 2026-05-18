@@ -43,3 +43,6 @@ next-env.d.ts
 # editor / tooling
 .claude/
 *.stackdump
+
+# Local PDF fixtures used for manual verification
+/scripts/fixtures/
