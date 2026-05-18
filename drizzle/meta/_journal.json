@@ -64,6 +64,13 @@
       "when": 1767661583621,
       "tag": "0008_superb_vulcan",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1779121855049,
+      "tag": "0009_eminent_scorpion",
+      "breakpoints": true
     }
   ]
 }

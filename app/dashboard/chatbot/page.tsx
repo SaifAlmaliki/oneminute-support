@@ -3,6 +3,7 @@
 import ApperanceConfig from "@/components/dashboard/chatbot/apperanceConfig";
 import ChatSimulator from "@/components/dashboard/chatbot/chatSimulator";
 import EmbedCodeConfig from "@/components/dashboard/chatbot/embedCodeConfig";
+import ModeConfig from "@/components/dashboard/chatbot/modeConfig";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import React, { useEffect, useRef, useState } from "react";
 
@@ -11,6 +12,7 @@ interface ChatBotMetadata {
   user_email: string;
   color: string;
   welcome_message: string;
+  mode: "text" | "voice" | "both";
   created_at: string;
   source_ids: string[];
 }
@@ -28,6 +30,7 @@ const ChatbotPage = () => {
 
   const [primaryColor, setPrimaryColor] = useState("#4f46e5");
   const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [mode, setMode] = useState<"text" | "voice" | "both">("text");
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -42,6 +45,7 @@ const ChatbotPage = () => {
           setWelcomeMessage(
             metaData.welcome_message || "Hi! How can I help you?"
           );
+          setMode((metaData.mode as "text" | "voice" | "both") ?? "text");
           setMessages([
             {
               role: "assistant",
@@ -148,6 +152,7 @@ const ChatbotPage = () => {
         body: JSON.stringify({
           color: primaryColor,
           welcome_message: welcomeMessage,
+          mode,
         }),
       });
 
@@ -166,7 +171,8 @@ const ChatbotPage = () => {
 
   const hasChanges = metadata
     ? primaryColor !== (metadata.color || "#4f46e5") ||
-      welcomeMessage !== (metadata.welcome_message || "Hi! How can I help you?")
+      welcomeMessage !== (metadata.welcome_message || "Hi! How can I help you?") ||
+      mode !== (metadata.mode ?? "text")
     : false;
 
   if (loading) {
@@ -218,6 +224,7 @@ const ChatbotPage = () => {
                 isSaving={isSaving}
                 hasChanges={hasChanges}
               />
+              <ModeConfig mode={mode} setMode={setMode} />
               <EmbedCodeConfig chatbotId={metadata?.id} />
             </div>
           </ScrollArea>

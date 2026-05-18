@@ -1,6 +1,6 @@
 # OneMinute Support
 
-A Next.js 16 (App Router, React 19) application that lets businesses ingest their docs/website/CSVs and embed an AI customer-support chat widget on third-party sites. Built with Drizzle ORM on Neon Postgres, Scalekit OIDC for dashboard SSO, OpenAI for chat + summarization, and ZenRows for website scraping.
+A Next.js 16 (App Router, React 19) application that lets businesses ingest their docs/website/CSVs and embed an AI customer-support chat widget on third-party sites. Built with Drizzle ORM on Neon Postgres, Scalekit OIDC for dashboard SSO, OpenAI for chat + summarization, and Firecrawl for website scraping.
 
 ## Stack
 
@@ -9,7 +9,7 @@ A Next.js 16 (App Router, React 19) application that lets businesses ingest thei
 - **Database**: Neon serverless Postgres via Drizzle ORM (`drizzle-orm/neon-http`)
 - **Auth**: Scalekit OIDC for dashboard users; signed JWT (`jose`, HS256) for public widget sessions
 - **AI**: OpenAI (`gpt-4o` for chat, `gpt-4o-mini` for summarization), `js-tiktoken` for token counting
-- **Scraping**: ZenRows (`api.zenrows.com`) for website knowledge ingestion
+- **Scraping**: Firecrawl (`api.firecrawl.dev`) for website knowledge ingestion
 
 ## Getting started
 
@@ -59,8 +59,8 @@ OPENAI_API_KEY=sk-...
 # Any sufficiently long random string; used to sign 2h widget session tokens.
 JWT_SECRET=replace-with-a-long-random-string
 
-# --- ZenRows (required for "website" knowledge sources) ---
-ZENROWS_API_KEY=...
+# --- Firecrawl (required for "website" knowledge sources) ---
+FIRECRAWL_API_KEY=fc-...
 ```
 
 Where each is consumed:
@@ -71,7 +71,7 @@ Where each is consumed:
 | `SCALEKIT_*` | `lib/scalekit.ts`, `app/api/auth/**`, `app/api/webhook/scalekit/route.ts` |
 | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | `lib/openAI.ts` |
 | `JWT_SECRET` | `app/api/widget/session/route.ts`, `app/api/widget/config/route.ts`, `app/api/chat/public/route.ts` |
-| `ZENROWS_API_KEY` | `app/api/knowledge/store/route.ts` |
+| `FIRECRAWL_API_KEY` | `app/api/knowledge/store/route.ts` |
 
 `.env*` is gitignored — never commit secrets.
 
@@ -88,7 +88,7 @@ app/
     webhook/scalekit/   Scalekit webhook receiver (signature-verified)
     widget/             session (issues JWT) + config (returns branding + sections)
     chat/public/        Public chat endpoint for the embed widget (JWT-gated)
-    knowledge/          fetch + store (website via ZenRows, text, CSV upload)
+    knowledge/          fetch + store (website via Firecrawl, text, CSV upload)
     section/            create / fetch / delete
     metadata/           Onboarding metadata fetch + store
     organization/       Organization fetch
@@ -120,7 +120,7 @@ lib/
 - **Two auth systems.** Dashboard users sign in via Scalekit OIDC; the callback writes a `user_session` cookie containing `{ email, organization_id }` JSON. Embeddable widget visitors never sign in — `/api/widget/session` issues a 2h `jose` HS256 JWT bound to a `widgetId` + `sessionId`, and the public chat endpoint validates it.
 - **No foreign keys.** Tables join by string fields (`user_email`, `chatbot_id`, `organization_id`). All ids are `text` with `gen_random_uuid()` defaults, all timestamps are `text` with `now()` defaults.
 - **No vector store.** RAG is done by concatenating selected `knowledge_source.content` blobs into the system prompt. When the conversation exceeds 6000 tokens, older messages (everything except the last 10) are summarized and prepended to context.
-- **Knowledge ingestion** summarizes everything aggressively into a single dense plaintext blob via `summarizeMarkdown`. Websites are fetched through ZenRows (markdown response type); CSV uploads have their full body summarized; short text snippets (<500 chars) are stored as-is.
+- **Knowledge ingestion** summarizes everything aggressively into a single dense plaintext blob via `summarizeMarkdown`. Websites are fetched through Firecrawl (markdown format); CSV uploads have their full body summarized; short text snippets (<500 chars) are stored as-is.
 - **Widget CORS** is intentionally permissive on `/api/widget/session` and the embed flow — required for cross-origin iframe embedding.
 
 ## Adding shadcn/ui components

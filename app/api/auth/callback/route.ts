@@ -3,15 +3,51 @@ import scalekit from "@/lib/scalekit";
 import { NextRequest, NextResponse } from "next/server";
 import { user as User } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const error_description = searchParams.get("error_description");
+  const idpInitiatedLogin = searchParams.get("idp_initiated_login");
 
   if (error)
     return NextResponse.json({ error, error_description }, { status: 401 });
+
+  if (idpInitiatedLogin) {
+    try {
+      const claims = await scalekit.getIdpInitiatedLoginClaims(
+        idpInitiatedLogin
+      );
+
+      const redirectUri = process.env.SCALEKIT_REDIRECT_URI!;
+      const state = crypto.randomBytes(16).toString("hex");
+
+      const authorizationUrl = scalekit.getAuthorizationUrl(redirectUri, {
+        scopes: ["openid", "profile", "email", "offline_access"],
+        state,
+        loginHint: claims.login_hint,
+        organizationId: claims.organization_id,
+        connectionId: claims.connection_id,
+      });
+
+      const response = NextResponse.redirect(authorizationUrl);
+      response.cookies.set("sk_state", state, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      });
+      return response;
+    } catch (err) {
+      console.error("Error handling idp_initiated_login:", err);
+      return NextResponse.json(
+        { error: "Invalid IdP-initiated login token" },
+        { status: 401 }
+      );
+    }
+  }
+
   if (!code)
     return NextResponse.json({ error: "No code provided" }, { status: 400 });
 

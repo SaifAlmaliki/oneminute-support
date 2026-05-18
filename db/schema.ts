@@ -62,6 +62,7 @@ export const chatBotMetadata = pgTable("chatBotMetadata", {
   welcome_message: text("welcome_message").default(
     "Hi there, How can I help you today?"
   ),
+  mode: text("mode").notNull().default("text"),
   created_at: text("created_at").default(sql`now()`),
 });
 
@@ -84,6 +85,7 @@ export const conversation = pgTable("conversation", {
   visitor_ip: text("visitor_ip"),
   name: text("name"),
   chatbot_id: text("chatbot_id").notNull(),
+  channel: text("channel").notNull().default("text"),
   created_at: text("created_at").default(sql`now()`),
 });
 

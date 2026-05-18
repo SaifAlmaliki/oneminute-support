@@ -11,7 +11,7 @@
       return;
     }
 
-    fetch("https://oneminute-support.vercel.app/api/widget/session", {
+    fetch("https://oneminute-support-ten.vercel.app/api/widget/session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,7 +32,7 @@
 
         var iframe = document.createElement("iframe");
         iframe.src =
-          "https://oneminute-support.vercel.app/embed?token=" + encodeURIComponent(data.token);
+          "https://oneminute-support-ten.vercel.app/embed?token=" + encodeURIComponent(data.token);
 
         iframe.setAttribute("title", "Support Chat");
         iframe.style.position = "fixed";
@@ -45,6 +45,7 @@
         iframe.style.borderRadius = "30px";
         iframe.style.background = "transparent";
         iframe.style.transition = "all 0.3s ease";
+        iframe.allow = "microphone";
 
         document.body.appendChild(iframe);
 

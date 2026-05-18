@@ -62,31 +62,35 @@ export async function POST(req: NextRequest) {
       type = body.type;
     }
     if (type === "website") {
-      const zenUrl = new URL("https://api.zenrows.com/v1/");
-      zenUrl.searchParams.set("apikey", process.env.ZENROWS_API_KEY!);
-      zenUrl.searchParams.set("url", body.url);
-      zenUrl.searchParams.set("response_type", "markdown");
-
-      const res = await fetch(zenUrl.toString(), {
+      const res = await fetch("https://api.firecrawl.dev/v2/scrape", {
+        method: "POST",
         headers: {
-          "User-Agent": "OneMinuteSupportBot/1.0",
+          Authorization: `Bearer ${process.env.FIRECRAWL_API_KEY!}`,
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          url: body.url,
+          formats: ["markdown"],
+        }),
       });
 
-      const html = await res.text();
+      const json = (await res.json().catch(() => null)) as
+        | { success: true; data: { markdown: string } }
+        | { success: false; error?: string }
+        | null;
 
-      if (!res.text) {
+      if (!res.ok || !json || json.success !== true) {
         return NextResponse.json(
           {
-            error: "ZenRows request failed",
+            error: "Firecrawl request failed",
             status: res.status,
-            body: html.slice(0, 500),
+            message: (json && !json.success && json.error) || "Unknown Firecrawl error",
           },
           { status: 502 }
         );
       }
 
-      const markdown = await summarizeMarkdown(html);
+      const markdown = await summarizeMarkdown(json.data.markdown);
 
       await db.insert(knowledge_source).values({
         user_email: user.email,

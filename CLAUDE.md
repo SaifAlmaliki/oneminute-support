@@ -25,7 +25,7 @@ All declared in code via `process.env.X!` — missing values throw at request ti
 - `SCALEKIT_ENVIRONMENT_URL`, `SCALEKIT_CLIENT_ID`, `SCALEKIT_CLIENT_SECRET`, `SCALEKIT_REDIRECT_URI`, `SCALEKIT_WEBHOOK_SECRET` — Scalekit SSO + webhook (`lib/scalekit.ts`, `app/api/auth/**`, `app/api/webhook/scalekit/route.ts`)
 - `OPENAI_API_KEY`, optional `OPENAI_BASE_URL` — chat + summarization (`lib/openAI.ts`)
 - `JWT_SECRET` — HMAC secret for embeddable widget session tokens (`app/api/widget/**`, `app/api/chat/public/route.ts`)
-- `ZENROWS_API_KEY` — website-scraping proxy used by knowledge ingestion (`app/api/knowledge/store/route.ts`)
+- `FIRECRAWL_API_KEY` — website-scraping API used by knowledge ingestion (`app/api/knowledge/store/route.ts`)
 
 ## Architecture
 
@@ -59,7 +59,7 @@ Drizzle ORM over `@neondatabase/serverless` HTTP driver (`db/client.ts`). Schema
 
 ### Knowledge ingestion
 
-`/api/knowledge/store` accepts three `type` values: `website` (scraped through ZenRows → markdown → summarized via `summarizeMarkdown`), `text` (summarized only if length > 500), and `upload` (multipart CSV; the whole file body is summarized). All paths produce a single dense plaintext blob stored in `knowledge_source.content` — there is no chunking and no embeddings.
+`/api/knowledge/store` accepts three `type` values: `website` (scraped through Firecrawl → markdown → summarized via `summarizeMarkdown`), `text` (summarized only if length > 500), and `upload` (multipart CSV; the whole file body is summarized). All paths produce a single dense plaintext blob stored in `knowledge_source.content` — there is no chunking and no embeddings.
 
 ### Notable gotchas
 
