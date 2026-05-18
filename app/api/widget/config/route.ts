@@ -34,7 +34,10 @@ export async function GET(req: Request) {
       .from(sections)
       .where(eq(sections.user_email, ownerEmail));
 
-    return NextResponse.json({ metadata: meta, sections: userSections });
+    return NextResponse.json({
+      metadata: { ...meta, mode: meta.mode ?? "text" },
+      sections: userSections,
+    });
   } catch (error) {
     console.error("Config Fetch Error:", error);
     return NextResponse.json(

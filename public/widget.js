@@ -45,6 +45,7 @@
         iframe.style.borderRadius = "30px";
         iframe.style.background = "transparent";
         iframe.style.transition = "all 0.3s ease";
+        iframe.allow = "microphone";
 
         document.body.appendChild(iframe);
 

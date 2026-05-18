@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   Loader2,
   MessageSquare,
+  Mic,
   MoreHorizontal,
   Search,
   Send,
@@ -21,6 +22,7 @@ interface Conversation {
   time: string;
   email?: string;
   visitor_ip?: string;
+  channel?: "text" | "voice";
 }
 
 interface Message {
@@ -179,16 +181,23 @@ const ConversationPage = () => {
                 >
                   <div className="flex w-full flex-col gap-1">
                     <div className="flex items-center justify-between">
-                      <span
-                        className={cn(
-                          "font-medium text-sm truncate max-w-45",
-                          selectedId === conversation.id
-                            ? "text-white"
-                            : "text-zinc-300"
+                      <div className="flex items-center gap-2 min-w-0">
+                        {conversation.channel === "voice" ? (
+                          <Mic className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        ) : (
+                          <MessageSquare className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
                         )}
-                      >
-                        {conversation.user}
-                      </span>
+                        <span
+                          className={cn(
+                            "font-medium text-sm truncate max-w-45",
+                            selectedId === conversation.id
+                              ? "text-white"
+                              : "text-zinc-300"
+                          )}
+                        >
+                          {conversation.user}
+                        </span>
+                      </div>
                       <span className="text-[10px] text-zinc-500 shrink-0">
                         {conversation.time}
                       </span>

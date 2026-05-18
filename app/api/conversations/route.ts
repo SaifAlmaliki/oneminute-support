@@ -56,6 +56,7 @@ export async function GET() {
           status: "active",
           time: timeDisplay,
           visitor_ip: c.visitor_ip,
+          channel: c.channel ?? "text",
         };
       })
     );

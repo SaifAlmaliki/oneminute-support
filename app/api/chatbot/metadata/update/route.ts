@@ -4,6 +4,8 @@ import { isAuthorized } from "@/lib/isAuthorized";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
+const VALID_MODES = new Set(["text", "voice", "both"]);
+
 export async function PUT(req: Request) {
   try {
     const user = await isAuthorized();
@@ -12,7 +14,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { color, welcome_message } = body;
+    const { color, welcome_message, mode } = body;
 
     if (!color || !welcome_message) {
       return NextResponse.json(
@@ -20,13 +22,16 @@ export async function PUT(req: Request) {
         { status: 400 }
       );
     }
+    if (mode !== undefined && !VALID_MODES.has(mode)) {
+      return NextResponse.json({ error: "Invalid mode" }, { status: 400 });
+    }
+
+    const update: Record<string, unknown> = { color, welcome_message };
+    if (mode !== undefined) update.mode = mode;
 
     const [updatedMetadata] = await db
       .update(chatBotMetadata)
-      .set({
-        color,
-        welcome_message,
-      })
+      .set(update)
       .where(eq(chatBotMetadata.user_email, user.email!))
       .returning();
 
