@@ -11,7 +11,21 @@ export async function GET() {
   }
 
   const sources = await db
-    .select()
+    .select({
+      id: knowledge_source.id,
+      user_email: knowledge_source.user_email,
+      type: knowledge_source.type,
+      name: knowledge_source.name,
+      status: knowledge_source.status,
+      source_url: knowledge_source.source_url,
+      blob_url: knowledge_source.blob_url,
+      extraction_status: knowledge_source.extraction_status,
+      extraction_error: knowledge_source.extraction_error,
+      chunk_count: knowledge_source.chunk_count,
+      meta_data: knowledge_source.meta_data,
+      last_updated: knowledge_source.last_updated,
+      created_at: knowledge_source.created_at,
+    })
     .from(knowledge_source)
     .where(eq(knowledge_source.user_email, user.email));
 

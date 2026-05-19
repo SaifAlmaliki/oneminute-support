@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text } from "drizzle-orm/pg-core";
+import { pgTable, text, vector } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
   id: text("id")
@@ -32,9 +32,29 @@ export const knowledge_source = pgTable("knowledge_source", {
   name: text("name").notNull(),
   status: text("status").notNull().default("active"),
   source_url: text("source_url"),
-  content: text("content"),
+  blob_url: text("blob_url"),
+  blob_pathname: text("blob_pathname"),
+  extraction_status: text("extraction_status").notNull().default("pending"),
+  extraction_error: text("extraction_error"),
+  chunk_count: text("chunk_count"),
   meta_data: text("meta_data"),
   last_updated: text("last_updated").default(sql`now()`),
+  created_at: text("created_at").default(sql`now()`),
+});
+
+export const knowledge_chunk = pgTable("knowledge_chunk", {
+  id: text("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  source_id: text("source_id")
+    .notNull()
+    .references(() => knowledge_source.id, { onDelete: "cascade" }),
+  user_email: text("user_email").notNull(),
+  chunk_index: text("chunk_index").notNull(),
+  chunk_type: text("chunk_type").notNull(),
+  content: text("content").notNull(),
+  embedding: vector("embedding", { dimensions: 1536 }).notNull(),
+  meta_data: text("meta_data"),
   created_at: text("created_at").default(sql`now()`),
 });
 
