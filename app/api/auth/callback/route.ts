@@ -1,8 +1,10 @@
 import { db } from "@/db/client";
 import scalekit from "@/lib/scalekit";
+import { assertScalekitEnv } from "@/lib/scalekit-env";
 import { NextRequest, NextResponse } from "next/server";
 import { user as User } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { cookies } from "next/headers";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest) {
@@ -51,7 +53,16 @@ export async function GET(req: NextRequest) {
   if (!code)
     return NextResponse.json({ error: "No code provided" }, { status: 400 });
 
+  const state = searchParams.get("state");
+  const cookieStore = await cookies();
+  const storedState = cookieStore.get("sk_state")?.value;
+  if (!state || !storedState || state !== storedState) {
+    return NextResponse.json({ error: "Invalid OAuth state" }, { status: 400 });
+  }
+  cookieStore.delete("sk_state");
+
   try {
+    assertScalekitEnv();
     const redirectUri = process.env.SCALEKIT_REDIRECT_URI!;
 
     const authResult = await scalekit.authenticateWithCode(code, redirectUri);
@@ -85,10 +96,18 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const response = NextResponse.redirect(new URL("/", req.url));
+    const nextCookie = cookieStore.get("sk_next")?.value;
+    cookieStore.delete("sk_next");
+    const redirectTarget =
+      nextCookie?.startsWith("/") && !nextCookie.startsWith("//")
+        ? nextCookie
+        : "/dashboard";
+
+    const response = NextResponse.redirect(new URL(redirectTarget, req.url));
     const userSession = {
       email: user.email,
       organization_id: organizationId,
+      id_token: idToken,
     };
 
     response.cookies.set("user_session", JSON.stringify(userSession), {

@@ -48,6 +48,7 @@ SCALEKIT_ENVIRONMENT_URL=https://your-env.scalekit.dev
 SCALEKIT_CLIENT_ID=skc_...
 SCALEKIT_CLIENT_SECRET=...
 SCALEKIT_REDIRECT_URI=http://localhost:3000/api/auth/callback
+SCALEKIT_POST_LOGOUT_REDIRECT_URI=http://localhost:3000/
 SCALEKIT_WEBHOOK_SECRET=whsec_...
 
 # --- OpenAI (required for chat + summarization) ---
@@ -73,7 +74,11 @@ Where each is consumed:
 | `JWT_SECRET` | `app/api/widget/session/route.ts`, `app/api/widget/config/route.ts`, `app/api/chat/public/route.ts` |
 | `FIRECRAWL_API_KEY` | `app/api/knowledge/store/route.ts` |
 
-`.env*` is gitignored — never commit secrets.
+`.env*` is gitignored — never commit secrets. Copy `.env.example` to `.env`. For Scalekit dashboard steps, see [docs/SCALEKIT_SETUP.md](docs/SCALEKIT_SETUP.md).
+
+```bash
+npm run scalekit:verify   # check Scalekit env + auth URL generation
+```
 
 ## Project layout
 

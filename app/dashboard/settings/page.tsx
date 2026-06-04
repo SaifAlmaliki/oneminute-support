@@ -98,6 +98,22 @@ const SettingPage = () => {
 
       <TeamSection />
 
+      <Card className="border-white/5 bg-[#0A0A0E]">
+        <CardHeader>
+          <CardTitle className="text-base font-medium text-white">
+            Account
+          </CardTitle>
+          <CardDescription>
+            Sign out of your Scalekit session and this workspace.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" className="border-white/10" asChild>
+            <a href="/api/auth/logout">Sign out</a>
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card className="border-red-500/10 bg-red-500/2">
         <CardHeader>
           <CardTitle className="text-base font-medium text-red-500">
